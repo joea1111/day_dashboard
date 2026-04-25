@@ -22,7 +22,7 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install django djangorestframework django-filter drf-spectacular requests
+        pip install django djangorestframework django-filter drf-spectacular requests djangorestframework-simplejwt
 
     - name: Run NGO Service Checks (Lab 13 Task 4.2)
       run: |
