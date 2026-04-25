@@ -1,4 +1,4 @@
-# Lab 13 Task 3.2: Dockerfile - Deploy NGO Microservice
+# Lab 13: Dockerfile for the WHOLE Monolith Project
 FROM python:3.13.1
 
 # Set environment variables
@@ -8,14 +8,17 @@ ENV PYTHONUNBUFFERED=1
 # Set the working directory
 WORKDIR /app
 
-# Install only the dependencies needed for the microservice
-RUN pip install django djangorestframework django-filter drf-spectacular requests
+# Install all project dependencies
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+RUN pip install daphne
 
-# Copy the microservice code
-COPY microservices/ngo_service/ .
+# Copy the entire project code
+COPY . .
 
 # Expose the port
 EXPOSE 8000
 
-# Migrate and run
-CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+# Migrate and start the server
+# We use daphne because your project uses Channels/Real-time features
+CMD ["sh", "-c", "python manage.py migrate && daphne -b 0.0.0.0 -p 8000 service_day_system.asgi:application"]
