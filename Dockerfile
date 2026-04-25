@@ -1,4 +1,4 @@
-# Lab 13 Task 3.2: Dockerfile Implementation
+# Lab 13 Task 3.2: Dockerfile - Deploy NGO Microservice
 FROM python:3.13.1
 
 # Set environment variables
@@ -8,16 +8,14 @@ ENV PYTHONUNBUFFERED=1
 # Set the working directory
 WORKDIR /app
 
-# Copy and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install only the dependencies needed for the microservice
+RUN pip install django djangorestframework django-filter drf-spectacular requests
 
-# Copy the project files
-COPY . .
+# Copy the microservice code
+COPY microservices/ngo_service/ .
 
-# Expose the default port (Port 8000 for the Gateway)
+# Expose the port
 EXPOSE 8000
 
-# Task 3.2 Start command: Migrate and then Run
-# We use sh -c to allow multiple commands
+# Migrate and run
 CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
