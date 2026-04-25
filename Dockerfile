@@ -11,7 +11,7 @@ WORKDIR /app
 # Install all project dependencies
 COPY requirements.txt .
 RUN pip install -r requirements.txt
-RUN pip install daphne
+RUN pip install daphne channels django-filter drf-spectacular django-celery-beat djangorestframework-simplejwt requests
 
 # Copy the entire project code
 COPY . .
