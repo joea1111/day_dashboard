@@ -31,6 +31,7 @@ ALLOWED_HOSTS = ['*']
 # Lab 13 Task 4.6: Fix CSRF for Render deployment
 CSRF_TRUSTED_ORIGINS = [
     'https://*.render.com',
+    'https://*.onrender.com',
     'http://127.0.0.1',
     'http://localhost'
 ]
