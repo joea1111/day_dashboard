@@ -1,5 +1,4 @@
 from django.test import TestCase
-from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
 from .models import NGOActivity
@@ -9,13 +8,13 @@ class NGOActivityModelTest(TestCase):
     def test_activity_creation(self):
         activity = NGOActivity.objects.create(
             ngo_name="Test NGO",
-            activity_name="Unit Test Activity",
+            description="Test Description",
+            location="Test Location",
+            service_type="Health",
             max_employees=5,
-            location="Test Loc",
-            service_type="Test Type",
-            description="Test Desc"
+            current_slots_taken=0
         )
-        self.assertEqual(activity.activity_name, "Unit Test Activity")
+        self.assertEqual(activity.ngo_name, "Test NGO")
         # Check if the calculated property remaining_slots works
         self.assertEqual(activity.remaining_slots, 5)
 
@@ -24,14 +23,13 @@ class NGOActivityAPITest(APITestCase):
     def setUp(self):
         self.activity = NGOActivity.objects.create(
             ngo_name="Initial NGO",
-            activity_name="Initial Activity",
-            max_employees=10,
-            location="KL",
             description="Test description",
-            service_type="Health"
+            location="KL",
+            service_type="Health",
+            max_employees=10,
+            current_slots_taken=0
         )
-        # Assuming the URL name in ngo_service/activities/urls.py is 'activity-list-create'
-        self.list_url = '/api/activities/' 
+        self.list_url = '/api/activities/'
 
     def test_get_activities_list(self):
         # Integration test (View + Model + Data)
@@ -43,11 +41,11 @@ class NGOActivityAPITest(APITestCase):
         # API test (JSON post and verification)
         data = {
             "ngo_name": "New NGO",
-            "activity_name": "New Activity",
-            "max_employees": 20,
+            "description": "API Test Activity",
             "location": "PJ",
-            "description": "API Test",
-            "service_type": "Social"
+            "service_type": "Social",
+            "max_employees": 20,
+            "current_slots_taken": 0
         }
         response = self.client.post(self.list_url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
