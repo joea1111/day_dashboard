@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.cache import cache_page
+from django.views.decorators.cache import never_cache
 from django.views.decorators.vary import vary_on_cookie
 from .forms import NGOActivityForm
 from .services.activity_service import ActivityService
@@ -12,8 +12,7 @@ from accounts.decorators import admin_required
 from accounts.services.account_service import AccountService
 from notifications.models import Notification
 
-@cache_page(60 * 15)  # Cache for 15 minutes (Topic 9.2a)
-@vary_on_cookie        # CRITICAL: Ensures cache is per-user so admin data doesn't leak
+@never_cache
 @login_required
 def ngo_list_view(request):
     """View to list all NGO activities"""
