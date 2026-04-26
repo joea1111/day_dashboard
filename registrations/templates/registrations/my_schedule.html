@@ -17,8 +17,13 @@
             class="bg-white rounded-3xl p-6 shadow-xl shadow-slate-200/40 border border-slate-100 flex flex-col justify-between hover:scale-[1.01] transition duration-300">
             <div>
                 <div class="flex items-center justify-between mb-4">
+                    {% if reg.status == 'CHECKED_IN' %}
+                    <span
+                        class="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider">Checked In</span>
+                    {% else %}
                     <span
                         class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-bold uppercase tracking-wider">Confirmed</span>
+                    {% endif %}
                     <span class="text-xs text-slate-400 font-medium whitespace-nowrap">Joined {{
                         reg.registered_at|date:"M d" }}</span>
                 </div>
@@ -55,10 +60,18 @@
                     <p class="text-sm font-bold text-red-500">{{ reg.activity.cut_off_date|date:"M d, H:i" }}</p>
                 </div>
 
+                {% if reg.status == 'CHECKED_IN' %}
+                <div class="flex items-center gap-2 text-blue-600 bg-blue-50 px-4 py-2 rounded-xl font-bold text-sm w-full justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Check-in Successful
+                </div>
+                {% else %}
                 <div class="flex items-center gap-2">
                     <a href="{% url 'virtual_scan' reg.activity.id %}"
                         class="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-xl transition"
-                        title="Simulate Scan QR Check-in">
+                        title="Scan QR Check-in">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
@@ -68,7 +81,7 @@
                         {% csrf_token %}
                         <button type="submit"
                             class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition"
-                            title="Withdraw">
+                            title="Withdraw" onclick="return confirm('Are you sure you want to withdraw?');">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -76,6 +89,7 @@
                         </button>
                     </form>
                 </div>
+                {% endif %}
             </div>
         </div>
         {% empty %}

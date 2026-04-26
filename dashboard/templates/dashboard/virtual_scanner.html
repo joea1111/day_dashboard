@@ -14,34 +14,19 @@
         <div
             class="bg-black rounded-[2rem] aspect-[9/16] overflow-hidden relative flex flex-col items-center justify-center">
 
-            <!-- Camera View (Mock) -->
-            <div class="absolute inset-0 bg-slate-800 opacity-60">
-                <!-- Grid dots to look like camera noise -->
-                <div class="absolute inset-0"
-                    style="background-image: radial-gradient(#ffffff22 1px, transparent 1px); background-size: 20px 20px;">
+            <!-- Real Camera Reader Element -->
+            <div id="reader" class="w-full h-full bg-black z-30"></div>
+            
+            <!-- Fallback/Overlay Mock if Camera is Disabled -->
+            <div id="overlay"
+                class="absolute inset-0 pointer-events-none w-full h-full flex items-center justify-center z-40 hidden">
+                <div class="relative w-64 h-64 border-2 border-blue-400 rounded-3xl flex items-center justify-center overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-blue-400 shadow-[0_0_15px_#60a5fa] animate-scan-line z-20"></div>
+                    <div class="absolute top-4 left-4 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-lg"></div>
+                    <div class="absolute top-4 right-4 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-lg"></div>
+                    <div class="absolute bottom-4 left-4 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-lg"></div>
+                    <div class="absolute bottom-4 right-4 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-lg"></div>
                 </div>
-            </div>
-
-            <!-- Scanning Frame -->
-            <div
-                class="relative w-64 h-64 border-2 border-blue-400 rounded-3xl flex items-center justify-center overflow-hidden">
-                <!-- Moving Laser Line -->
-                <div
-                    class="absolute top-0 left-0 w-full h-1 bg-blue-400 shadow-[0_0_15px_#60a5fa] animate-scan-line z-20">
-                </div>
-
-                <!-- Corner Borders -->
-                <div class="absolute top-4 left-4 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-lg"></div>
-                <div class="absolute top-4 right-4 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-lg"></div>
-                <div class="absolute bottom-4 left-4 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-lg"></div>
-                <div class="absolute bottom-4 right-4 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-lg"></div>
-
-                <!-- Ghostly Icon -->
-                <svg class="w-32 h-32 text-blue-400 opacity-30 animate-pulse" fill="none" stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                </svg>
             </div>
 
             <!-- UI Text -->
@@ -52,9 +37,9 @@
             </div>
 
             <!-- Status Indicator -->
-            <div class="absolute bottom-4 flex items-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
-                <span class="text-[10px] text-blue-400 font-black uppercase">Scanning in progress...</span>
+            <div class="absolute bottom-4 flex items-center gap-2 z-40">
+                <div id="status-dot" class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></div>
+                <span id="status-text" class="text-[10px] text-blue-400 font-black uppercase">Requesting Camera...</span>
             </div>
         </div>
     </div>
@@ -62,11 +47,54 @@
 
 </div>
 
-<!-- Redirect Script -->
+<!-- Include HTML5-QRCode Library -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
 <script>
-    setTimeout(() => {
-        window.location.href = "{% url 'my_schedule' %}";
-    }, 2500); 
+    document.addEventListener("DOMContentLoaded", function () {
+        const html5QrCode = new Html5Qrcode("reader");
+
+        // Action when a QR code is detected
+        function onScanSuccess(decodedText, decodedResult) {
+            // Stop scanning immediately to prevent multiple submissions
+            html5QrCode.stop().then((ignore) => {
+                // Change UI to reflect success
+                document.getElementById("status-text").innerText = "Scan Successful! Checking in...";
+                document.getElementById("status-dot").classList.replace("bg-blue-500", "bg-emerald-500");
+
+                // Dynamically build a form to POST to the decoded URL
+                const form = document.createElement("form");
+                form.method = "POST";
+                form.action = decodedText;  // The URL encoded in the QR code
+                
+                // Securely embed CSRF token
+                const csrfToken = document.createElement("input");
+                csrfToken.type = "hidden";
+                csrfToken.name = "csrfmiddlewaretoken";
+                csrfToken.value = "{{ csrf_token }}";
+                form.appendChild(csrfToken);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }).catch((err) => {
+                console.error("Stop failed: ", err);
+            });
+        }
+
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        
+        // Start the camera (prefer environment/back camera)
+        html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess)
+        .then(() => {
+            // Show overlay once camera is playing
+            document.getElementById("overlay").classList.remove("hidden");
+            document.getElementById("status-text").innerText = "Align QR Code to scan";
+        })
+        .catch(err => {
+            document.getElementById("status-text").innerText = "Camera access denied. Please allow permissions.";
+            document.getElementById("status-dot").classList.replace("bg-blue-500", "bg-red-500");
+        });
+    });
 </script>
 
 <style>

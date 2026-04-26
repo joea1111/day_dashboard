@@ -105,9 +105,40 @@ class RegistrationService:
             return False, f"An error occurred: {str(e)}"
 
     @staticmethod
+    def check_in_user(user, activity_id):
+        """
+        Handle user check-in for an activity.
+        Returns (success, message)
+        """
+        try:
+            with transaction.atomic():
+                activity = NGOActivity.objects.select_for_update().get(id=activity_id)
+
+                # 1. Check if registration exists and is 'REGISTERED'
+                reg = Registration.objects.filter(user=user, activity=activity, status='REGISTERED').first()
+                if not reg:
+                    # Check if already checked in to provide better feedback
+                    if Registration.objects.filter(user=user, activity=activity, status='CHECKED_IN').exists():
+                        return False, "You have already checked in for this activity."
+                    return False, "You are not registered for this activity, or have withdrawn."
+
+                # 2. Update registration status
+                reg.status = 'CHECKED_IN'
+                reg.save()
+
+            return True, f"Successfully checked-in for {activity.ngo_name}!"
+        except NGOActivity.DoesNotExist:
+            return False, "Activity not found."
+        except Exception as e:
+            return False, f"An error occurred: {str(e)}"
+
+    @staticmethod
     def get_user_registrations(user):
-        """Get all active registrations for a user"""
-        return Registration.objects.filter(user=user, status='REGISTERED').select_related('activity')
+        """Get all active and checked-in registrations for a user"""
+        return Registration.objects.filter(
+            user=user, 
+            status__in=['REGISTERED', 'CHECKED_IN']
+        ).select_related('activity')
 
     @staticmethod
     def is_user_registered(user, activity_id):

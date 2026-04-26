@@ -28,6 +28,19 @@ def withdraw_activity_view(request, activity_id):
     return redirect('ngo_list')
 
 @employee_required
+def check_in_activity_view(request, activity_id):
+    """View to handle employee check-in for an activity - Employees Only"""
+    if request.method == 'POST':
+        success, message = RegistrationService.check_in_user(request.user, activity_id)
+        if success:
+            messages.success(request, message)
+            # Add a visual flag for the frontend to show celebrated UI optionally
+            request.session['just_checked_in'] = True 
+        else:
+            messages.error(request, message)
+    return redirect('my_schedule')
+
+@employee_required
 def my_registrations_view(request):
     """View to show current user's registered activities - Employees Only"""
     registrations = RegistrationService.get_user_registrations(request.user)
