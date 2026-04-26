@@ -221,6 +221,9 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
+# Run Celery tasks synchronously (bypassing Redis) on Render
+CELERY_TASK_ALWAYS_EAGER = True
+
 # Email Configuration (Task 11.2) - Using Console for Demo
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
