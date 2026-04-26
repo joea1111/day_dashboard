@@ -15,4 +15,5 @@ urlpatterns = [
     path('qr-code/<int:pk>/', views.qr_generator_view, name='qr_generator'),
     path('virtual-scan/<int:pk>/', views.virtual_scanner_view, name='virtual_scan'),
     path('activity/<int:pk>/', views.activity_detail_view, name='activity_detail'),
+    path('export-report/', views.export_attendance_report_view, name='export_report'),
 ]

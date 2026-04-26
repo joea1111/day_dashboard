@@ -124,6 +124,7 @@ class RegistrationService:
 
                 # 2. Update registration status
                 reg.status = 'CHECKED_IN'
+                reg.checked_in_at = timezone.now()
                 reg.save()
 
             return True, f"Successfully checked-in for {activity.ngo_name}!"
@@ -153,11 +154,19 @@ class RegistrationService:
         """
         registrations = Registration.objects.filter(
             activity_id=activity_id, 
-            status='REGISTERED'
+            status__in=['REGISTERED', 'CHECKED_IN']
         ).select_related('user')
         return [reg.user for reg in registrations]
 
-        return [reg.user for reg in registrations]
+    @staticmethod
+    def get_activity_registrations(activity_id):
+        """
+        Get detailed registration objects representing attendance for Admin tracking.
+        """
+        return Registration.objects.filter(
+            activity_id=activity_id,
+            status__in=['REGISTERED', 'CHECKED_IN']
+        ).select_related('user').order_by('-status', '-registered_at')
     
     @staticmethod
     def get_overall_stats():

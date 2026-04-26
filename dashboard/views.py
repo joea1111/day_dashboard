@@ -1,4 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponse
+import csv
 from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -118,11 +120,11 @@ def monitoring_view(request):
     
     activity_data = []
     for activity in activities:
-        participants = RegistrationService.get_activity_participants(activity.id)
+        registrations = RegistrationService.get_activity_registrations(activity.id)
         activity_data.append({
             'activity': activity,
-            'participants': participants,
-            'participant_count': len(participants),
+            'registrations': registrations,
+            'participant_count': len(registrations),
             'utilization': round((activity.current_slots_taken / activity.max_employees) * 100) if activity.max_employees > 0 else 0
         })
 
@@ -140,6 +142,35 @@ def qr_generator_view(request, pk):
     """
     activity = ActivityService.get_activity(pk)
     return render(request, 'dashboard/qr_generator.html', {'activity': activity})
+
+@admin_required
+def export_attendance_report_view(request):
+    """
+    Generates a CSV report of all activities and attendance records.
+    Use Case 4: Post-event report generation.
+    """
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="attendance_report.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Activity ID', 'NGO Name', 'Date', 'Employee', 'Email', 'Status', 'Registered At', 'Checked In At'])
+
+    activities = ActivityService.get_all_activities()
+    for activity in activities:
+        registrations = RegistrationService.get_activity_registrations(activity.id)
+        for reg in registrations:
+            writer.writerow([
+                activity.id,
+                activity.ngo_name,
+                activity.date_time.strftime('%Y-%m-%d %H:%M'),
+                reg.user.get_full_name() or reg.user.username,
+                reg.user.email,
+                reg.status,
+                reg.registered_at.strftime('%Y-%m-%d %H:%M') if reg.registered_at else 'N/A',
+                reg.checked_in_at.strftime('%Y-%m-%d %H:%M') if reg.checked_in_at else 'Not Checked In'
+            ])
+
+    return response
 
 @login_required
 def virtual_scanner_view(request, pk):
